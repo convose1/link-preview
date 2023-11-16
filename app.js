@@ -4,16 +4,15 @@ const express = require("express"),
   cors = require("cors");
 require("dotenv").config();
 const { getPreviewFromContent } = require("link-preview-js");
-const isValidHttpUrl = (string) => {
-  let url;
-
-  try {
-    url = new URL(string);
-  } catch (_) {
-    return false;
+const makeUrl = ({ url }) => {
+  if (!url || url == "") {
+    throw new Error("not valid link");
   }
-
-  return url.protocol === "http:" || url.protocol === "https:";
+  let newUrl = url;
+  if (!/^https?:\/\//i.test(url)) {
+    newUrl = "http://" + url;
+  }
+  return newUrl;
 };
 const app = express();
 app.use(cors());
@@ -30,20 +29,16 @@ app.get("/", async (_, res) => {
 
 app.post("/", async (req, res) => {
   try {
-    const { url } = req.body;
-    if (!url || url == "" || !isValidHttpUrl(url)) {
-      return res.status(401).json({ message: "Error: url is not valid" });
-    }
+    const url = makeUrl(req.body);
     const response = await axios.get(url);
     getPreviewFromContent({ ...response, url }).then((data) => {
       return res.status(200).json(data);
     });
   } catch (error) {
-    return res.status(401).json({ message: JSON.stringify(error) });
+    return res.status(401).json({ message: error?.message });
   }
 });
 
-// finally, let's start our server...
 const server = app.listen(process.env.PORT || 3000, function () {
-  console.log("Listening on port " + server.address().port);
+  console.log("app runing on port  " + server.address().port);
 });
