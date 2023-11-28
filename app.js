@@ -4,6 +4,12 @@ const express = require("express"),
   cors = require("cors");
 require("dotenv").config();
 const { getPreviewFromContent } = require("link-preview-js");
+const youtube_parser = (url) => {
+  const regExp =
+    /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|live\/)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[1].length == 11 ? match[1] : false;
+};
 const makeUrl = ({ url }) => {
   if (!url || url == "") {
     throw new Error("not valid link");
@@ -32,13 +38,18 @@ app.post("/", async (req, res) => {
     const url = makeUrl(req.body);
     const response = await axios.get(url);
     getPreviewFromContent({ ...response, url }).then((data) => {
-      return res.status(200).json(data);
+      let newData = data;
+      if (newData.mediaType == "video.other") {
+        const videoId = youtube_parser(url);
+        newData = { ...data, videoId };
+      }
+      return res.status(200).json(newData);
     });
   } catch (error) {
     return res.status(401).json({ message: error?.message });
   }
 });
 
-const server = app.listen(process.env.PORT || 3000, function () {
+const server = app.listen(process.env.PORT || 4000, function () {
   console.log("app runing on port  " + server.address().port);
 });
