@@ -1,4 +1,5 @@
 const { default: axios } = require("axios");
+const probe = require("probe-image-size");
 var bodyParser = require("body-parser");
 const express = require("express"),
   cors = require("cors");
@@ -37,11 +38,20 @@ app.post("/", async (req, res) => {
   try {
     const url = makeUrl(req.body);
     const response = await axios.get(url);
-    getPreviewFromContent({ ...response, url }).then((data) => {
+    getPreviewFromContent({ ...response, url }).then(async (data) => {
       let newData = data;
+      const imagesource = data?.images[0] || null;
+      if (imagesource) {
+        let result = await probe(imagesource);
+        const ratio = Number((result.width / result.height).toFixed(2));
+        newData = {
+          ...newData,
+          ratio,
+        };
+      }
       if (newData.mediaType == "video.other") {
         const videoId = youtube_parser(url);
-        newData = { ...data, videoId };
+        newData = { ...newData, videoId };
       }
       return res.status(200).json(newData);
     });
