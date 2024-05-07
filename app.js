@@ -42,12 +42,19 @@ app.post("/", async (req, res) => {
       let newData = data;
       const imagesource = data?.images[0] || null;
       if (imagesource) {
-        let result = await probe(imagesource);
-        const ratio = Number((result.width / result.height).toFixed(2));
-        newData = {
-          ...newData,
-          ratio,
-        };
+        try {
+          let result = await probe(imagesource);
+          const ratio = Number((result.width / result.height).toFixed(2));
+          newData = {
+            ...newData,
+            ratio,
+          };
+        } catch (error) {
+          newData = {
+            ...newData,
+            ratio: 1,
+          };
+        }
       }
       if (newData.mediaType == "video.other") {
         const videoId = youtube_parser(url);
