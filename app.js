@@ -56,6 +56,7 @@ app.post("/", async (req, res) => {
           };
         }
       }
+      // check here if it is youtube video
       if (newData.mediaType == "video.other") {
         const videoId = youtube_parser(url);
         newData = { ...newData, videoId };
