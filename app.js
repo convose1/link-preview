@@ -39,8 +39,6 @@ app.post("/", async (req, res) => {
     const url = makeUrl(req.body);
     const response = await axios.get(url);
     getPreviewFromContent({ ...response, url }).then(async (data) => {
-      console.log("data ---", data);
-
       let newData = data;
       const imagesource = data?.images[0] || null;
       if (imagesource) {
@@ -63,7 +61,6 @@ app.post("/", async (req, res) => {
         const videoId = youtube_parser(url);
         newData = { ...newData, videoId };
       }
-      console.log("newData ---", newData);
       return res.status(200).json(newData);
     });
   } catch (error) {
