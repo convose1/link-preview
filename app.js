@@ -37,10 +37,14 @@ app.get("/", async (_, res) => {
 app.post("/", async (req, res) => {
   try {
     const url = makeUrl(req.body);
-    const response = await axios.get(url);
+    const headers = {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
+    };
+    const response = await axios.get(url, {
+      headers,
+    });
     getPreviewFromContent({ ...response, url }).then(async (data) => {
-      console.log("data ---", data);
-
       let newData = data;
       const imagesource = data?.images[0] || null;
       if (imagesource) {
@@ -63,7 +67,6 @@ app.post("/", async (req, res) => {
         const videoId = youtube_parser(url);
         newData = { ...newData, videoId };
       }
-      console.log("newData ---", newData);
       return res.status(200).json(newData);
     });
   } catch (error) {
