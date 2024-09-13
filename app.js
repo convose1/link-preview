@@ -1,26 +1,11 @@
 const { default: axios } = require("axios");
 const probe = require("probe-image-size");
 var bodyParser = require("body-parser");
+const { getPreviewFromContent } = require("link-preview-js");
+const { makeUrl, extractVideoId, getVideoDetails } = require("./utils");
 const express = require("express"),
   cors = require("cors");
 require("dotenv").config();
-const { getPreviewFromContent } = require("link-preview-js");
-const youtube_parser = (url) => {
-  const regExp =
-    /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|live\/)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return match && match[1].length == 11 ? match[1] : false;
-};
-const makeUrl = ({ url }) => {
-  if (!url || url == "") {
-    throw new Error("not valid link");
-  }
-  let newUrl = url;
-  if (!/^https?:\/\//i.test(url)) {
-    newUrl = "http://" + url;
-  }
-  return newUrl;
-};
 const app = express();
 app.use(cors());
 
@@ -37,13 +22,25 @@ app.get("/", async (_, res) => {
 app.post("/", async (req, res) => {
   try {
     const url = makeUrl(req.body);
-    const headers = {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
-    };
-    const response = await axios.get(url, {
-      headers,
-    });
+    let tweetId = null;
+
+    // check if it is an x.com post
+    if (url && url.startsWith("https://x.com/")) {
+      // Extract tweet ID from URL
+      const tweetIdMatch = url.match(/\/status\/(\d+)/);
+      if (tweetIdMatch) {
+        tweetId = tweetIdMatch[1];
+      }
+    }
+
+    //if it is youtube video, we use youtube data api3 to fetch details of video
+    const videoId = extractVideoId(url);
+    if (videoId) {
+      const video = await getVideoDetails(videoId, url);
+      return res.status(200).json(video);
+    }
+
+    const response = await axios.get(url);
     getPreviewFromContent({ ...response, url }).then(async (data) => {
       let newData = data;
       const imagesource = data?.images[0] || null;
@@ -62,10 +59,10 @@ app.post("/", async (req, res) => {
           };
         }
       }
-      // check here if it is youtube video
-      if (newData.mediaType == "video.other") {
-        const videoId = youtube_parser(url);
-        newData = { ...newData, videoId };
+
+      // check here if it is x post
+      if (tweetId) {
+        newData = { ...newData, tweetId };
       }
       return res.status(200).json(newData);
     });
