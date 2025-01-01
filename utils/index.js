@@ -14,7 +14,7 @@ const makeUrl = ({ url }) => {
 
 const extractVideoId = (url) => {
   const regex =
-    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|embed)\/|.+[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:shorts\/|(?:v|embed)\/|.+[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
   const matches = url.match(regex);
   return matches ? matches[1] : null;
 };
