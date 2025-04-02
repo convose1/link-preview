@@ -55,6 +55,7 @@ app.post("/", async (req, res) => {
         } catch (error) {
           newData = {
             ...newData,
+            images: [],
             ratio: 1,
           };
         }
