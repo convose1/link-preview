@@ -15,27 +15,34 @@ const respond = (statusCode, payload) => ({
 
 const parseBody = (event) => {
   if (!event.body) return {};
-  if (typeof event.body === "string") {
+  const rawBody =
+    event.isBase64Encoded && typeof event.body === "string"
+      ? Buffer.from(event.body, "base64").toString("utf8")
+      : event.body;
+
+  if (typeof rawBody === "string") {
     try {
-      return JSON.parse(event.body);
+      return JSON.parse(rawBody);
     } catch (error) {
       return {};
     }
   }
-  return event.body;
+  return rawBody;
 };
 
 module.exports.handler = async (event) => {
   try {
-    if (event.httpMethod === "OPTIONS") {
+    const method = event?.httpMethod || event?.requestContext?.http?.method || "";
+
+    if (method === "OPTIONS") {
       return respond(200, { message: "ok" });
     }
 
-    if (event.httpMethod === "GET") {
+    if (method === "GET") {
       return respond(200, { message: "Hello there!" });
     }
 
-    if (event.httpMethod !== "POST") {
+    if (method !== "POST") {
       return respond(405, { message: "Method Not Allowed" });
     }
 
