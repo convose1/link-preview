@@ -7,6 +7,6 @@
 
 ### AWS Lambda
 - Runtime: Node.js 18.x (or later)
-- Handler: `handler.handler`
+- Handler: `handler.handler` (or leave default `index.handler`—`index.js` now re-exports the handler)
 - Environment variables: `API_KEY` for YouTube Data API v3
 - Behind API Gateway, map `GET /` to the handler (returns `{ message: "Hello there!" }`) and `POST /` with a JSON body `{ "url": "<link>" }` to retrieve the preview data. CORS headers are included in the Lambda response; enable CORS on API Gateway to match.
