@@ -11,11 +11,17 @@ const FETCH_HEADERS = {
   "Accept-Language": "en-US,en;q=0.9",
 };
 
+// Bound each outbound fetch so the function returns a clean 4xx via the
+// handler's catch block instead of being killed by the Lambda runtime
+// timeout (which surfaces as an opaque API Gateway 500).
+const FETCH_TIMEOUT_MS = 8000;
+
 const fetchViaProxy = async (url) => {
   const proxiedUrl = `https://r.jina.ai/${url}`;
   const response = await axios.get(proxiedUrl, {
     headers: FETCH_HEADERS,
     maxRedirects: 5,
+    timeout: FETCH_TIMEOUT_MS,
   });
   return response.data;
 };
@@ -63,6 +69,7 @@ const buildPreviewResponse = async (rawUrl) => {
     const response = await axios.get(url, {
       headers: FETCH_HEADERS,
       maxRedirects: 5,
+      timeout: FETCH_TIMEOUT_MS,
       validateStatus: (status) => status >= 200 && status < 400,
     });
     data = await getPreviewFromContent({ ...response, url });
