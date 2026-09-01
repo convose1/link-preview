@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "package": "rm -rf node_modules link-preview.zip && yarn install --production --frozen-lockfile && zip -qr link-preview.zip handler.js index.js preview.js utils package.json yarn.lock node_modules"
+    "package": "./deploy.sh",
+    "test": "node --test __tests__/*.test.js"
   },
   "keywords": [],
   "author": "",
