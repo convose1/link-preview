@@ -2,7 +2,9 @@ var bodyParser = require("body-parser");
 const express = require("express"),
   cors = require("cors");
 const { buildPreviewResponse } = require("./preview");
-require("dotenv").config();
+// quiet: dotenv v17 prints a promotional banner on every load. In Lambda that
+// lands in CloudWatch on every cold start, ahead of the real logs.
+require("dotenv").config({ quiet: true });
 const app = express();
 app.use(cors());
 

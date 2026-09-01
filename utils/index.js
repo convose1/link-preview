@@ -1,6 +1,8 @@
 const { default: axios } = require("axios");
 
-require("dotenv").config();
+// quiet: dotenv v17 prints a promotional banner on every load. In Lambda that
+// lands in CloudWatch on every cold start, ahead of the real logs.
+require("dotenv").config({ quiet: true });
 const makeUrl = ({ url }) => {
   if (!url || url == "") {
     throw new Error("not valid link");
