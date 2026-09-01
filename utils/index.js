@@ -1,6 +1,8 @@
 const { default: axios } = require("axios");
 
-require("dotenv").config();
+// quiet: dotenv v17 prints a promotional banner on every load. In Lambda that
+// lands in CloudWatch on every cold start, ahead of the real logs.
+require("dotenv").config({ quiet: true });
 const makeUrl = ({ url }) => {
   if (!url || url == "") {
     throw new Error("not valid link");
@@ -23,7 +25,7 @@ const API_KEY = process.env.API_KEY; //YouTube Data API key
 const getVideoDetails = async (videoId, url) => {
   try {
     const endpoint = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${API_KEY}&part=snippet,contentDetails,statistics`;
-    const response = await axios.get(endpoint);
+    const response = await axios.get(endpoint, { timeout: 8000 });
     const videoDetails = response.data.items[0];
 
     if (videoDetails) {

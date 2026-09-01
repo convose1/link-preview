@@ -1,3 +1,8 @@
 node_modules
 .env
 .vscode
+link-preview.zip
+
+# This repo uses yarn. An npm lockfile here means two sources of truth
+# resolving to different trees, and deploy.sh installs from yarn.lock.
+package-lock.json
