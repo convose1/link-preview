@@ -15,6 +15,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname "$0")" >/dev/null 2>&1 && pwd)"
 cd "$SCRIPT_DIR"
 
+LOCKFILE_BACKUP="$(mktemp)"
+trap 'rm -f "$LOCKFILE_BACKUP"' EXIT
+
 echo "Building Link Preview Lambda in ${SCRIPT_DIR}..."
 
 # Clean the previous artifact. node_modules is deliberately NOT removed yet —
@@ -39,9 +42,16 @@ yarn --silent test
 # Now rebuild the tree production-only. Removed outright rather than pruned:
 # the artifact must match the lockfile exactly, and a leftover dev tree is the
 # difference between shipping express and not.
+#
+# yarn.lock is saved and restored around this: `yarn install --production`
+# REWRITES the lockfile, dropping every devDependency entry from it. Left alone
+# that means each build dirties the repo and quietly discards the dev half of
+# the lockfile, so the next full install re-resolves it unpinned.
 echo "Rebuilding node_modules production-only..."
+cp yarn.lock "$LOCKFILE_BACKUP"
 rm -rf node_modules
 yarn install --production --frozen-lockfile
+cp "$LOCKFILE_BACKUP" yarn.lock
 
 # Create deployment package.
 #
