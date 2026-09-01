@@ -19,9 +19,13 @@ Every one of them runs the same steps, in this order:
 4. **Zip the artifact.**
 5. **Report the size**, and print the exact `update-function-code` command.
 
-The ordering matters and is easy to get wrong: the tests must run *before*
-`node_modules` is rebuilt production-only, or they fail with `MODULE_NOT_FOUND`
-instead of testing anything.
+**The production install happens in a staging directory, never in the repo.**
+That is not a detail — `yarn install --production` *rewrites* `yarn.lock`,
+stripping every devDependency entry from it. Installing into the repo means
+each build dirties the tree and leaves a lockfile that the next full
+`yarn install --frozen-lockfile` rejects with *"Your lockfile needs to be
+updated"*. Staging removes the whole class of problem: the repo's
+`node_modules` and `yarn.lock` are never touched.
 
 ## Building here
 
@@ -32,9 +36,17 @@ instead of testing anything.
 `deploy.sh` is the single definition of what goes into the zip. `yarn package`
 delegates to it, so the two cannot drift.
 
-Afterwards `node_modules` holds production dependencies only. Run
-`yarn install` to get the dev server working again — the script says so when it
-finishes.
+The build is non-destructive and repeatable: it does not modify `node_modules`,
+`yarn.lock` or anything else tracked, so `git status` is unchanged afterwards
+and the dev server still works.
+
+If you hit *"Your lockfile needs to be updated, but yarn was run with
+`--frozen-lockfile`"*, an earlier build damaged the lockfile. Recover with:
+
+```bash
+git checkout yarn.lock
+rm -f package-lock.json   # this repo uses yarn; an npm lockfile here is a second source of truth
+```
 
 ## What the artifact contains
 

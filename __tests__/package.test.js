@@ -10,6 +10,14 @@ const pkg = require("../package.json");
 // two cannot drift.
 const deployScript = fs.readFileSync(path.join(root, "deploy.sh"), "utf8");
 
+// The SHIPPED=(...) array in deploy.sh, parsed rather than pattern-matched, so
+// these tests keep working if the script's formatting changes.
+const shippedByDeployScript = (() => {
+  const m = deployScript.match(/^SHIPPED=\(([^)]*)\)/m);
+  assert.ok(m, "deploy.sh must declare a SHIPPED=(...) array");
+  return m[1].split(/\s+/).filter(Boolean);
+})();
+
 // These tests exist to gate `./deploy.sh`, matching the ai/ and translation/
 // Lambdas in the convosetranslation repo. They deliberately make no network
 // calls and need no framework: a deploy gate that is slow or flaky gets
@@ -46,7 +54,7 @@ test("every file the package script ships exists", () => {
     assert.ok(fs.existsSync(path.join(root, f)), `${f} is zipped but missing`);
   }
   for (const f of SHIPPED_FILES) {
-    assert.match(deployScript, new RegExp(`^\\s*${f.replace(".", "\\.")}\\s*\\\\?$`, "m"),
+    assert.ok(shippedByDeployScript.includes(f),
       `${f} exists but deploy.sh does not ship it`);
   }
 });
@@ -55,7 +63,7 @@ test("app.js is NOT shipped — it is the local dev server", () => {
   // app.js is the express server used only by `yarn dev`/`yarn start`. It is
   // excluded on purpose, which is what lets express/body-parser/cors stay out
   // of the deployment package entirely.
-  assert.doesNotMatch(deployScript, /^\s*app\.js\s*\\?$/m);
+  assert.ok(!shippedByDeployScript.includes("app.js"));
 });
 
 test("the dev server's dependencies stay out of production", () => {
@@ -87,6 +95,6 @@ test("no .env is shipped — configuration comes from Lambda env vars", () => {
   // Unlike the ai/ and translation/ Lambdas, which ship a .env, this function
   // reads API_KEY from the Lambda's own environment. Keep it that way: a .env
   // inside the zip is a committed-secret risk and drifts from the console.
-  assert.doesNotMatch(deployScript, /^\s*\.env\s*\\?$/m);
+  assert.ok(!shippedByDeployScript.some((f) => f.startsWith(".env")));
   assert.match(fs.readFileSync(path.join(root, ".gitignore"), "utf8"), /^\.env$/m);
 });
