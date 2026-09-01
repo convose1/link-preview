@@ -44,9 +44,18 @@ If you hit *"Your lockfile needs to be updated, but yarn was run with
 `--frozen-lockfile`"*, an earlier build damaged the lockfile. Recover with:
 
 ```bash
-git checkout yarn.lock
-rm -f package-lock.json   # this repo uses yarn; an npm lockfile here is a second source of truth
+git checkout yarn.lock                 # restore the full lockfile
+rm -f package-lock.json                # this repo uses yarn; an npm lockfile is a second source of truth
+rm -rf node_modules && yarn install    # rebuild the dev tree
 ```
+
+That last line matters and is not obvious. A build damaged this way leaves
+`node_modules` holding only the production packages *while yarn's integrity
+record still says the install is fine*, so a plain `yarn install` answers
+`success Already up-to-date` and restores nothing — `express` and friends stay
+missing and `yarn dev` keeps failing. Removing `node_modules` first, or running
+`yarn install --check-files`, is what actually repairs it. `deploy.sh` now uses
+`--check-files` for exactly this reason.
 
 ## What the artifact contains
 

@@ -26,15 +26,22 @@ echo "Building Link Preview Lambda in ${SCRIPT_DIR}..."
 echo "Cleaning previous artifact..."
 rm -f "$ZIP"
 
-# The gate runs against the repo's normal dev tree, so make sure it exists.
+# The gate runs against the repo's normal dev tree, so make sure it is complete.
+#
+# --check-files, and NOT a bare `[ -d node_modules ]` test, because a directory
+# that exists can still be the wrong tree. An earlier version of this script
+# installed --production into the repo, leaving node_modules holding only the
+# 52 production packages while yarn's integrity record still claimed the
+# install was fine — so a plain `yarn install` answered "Already up-to-date"
+# and never restored express, body-parser, cors or nodemon. --check-files
+# verifies what is actually on disk against the lockfile and repairs it.
+#
 # Deliberately NOT --frozen-lockfile: this install is a convenience for the
-# tests, and failing here on an out-of-date lockfile would block a build for a
-# reason that has nothing to do with the artifact. The build install below is
-# the one that must match the lockfile exactly.
-if [ ! -d node_modules ]; then
-  echo "Installing dependencies for the test gate..."
-  yarn install
-fi
+# tests, and failing here on lockfile drift would block a build for a reason
+# that has nothing to do with the artifact. The staging install below is the
+# one that must match the lockfile exactly.
+echo "Checking dependencies for the test gate..."
+yarn install --check-files
 
 # Guard the deployment package before building it. No network calls, no
 # framework: the tests assert the artifact loads, ships every file it
